@@ -40,3 +40,17 @@ class GridWorld:
             done=False
         
         return self.get_observation(), reward, done
+    
+    def render(self):
+        grid = [["." for _ in range(self.grid_size)]
+                for _ in range(self.grid_size)]
+
+        ax, ay = self.agent_pos
+        gx, gy = self.goal_pos
+
+        grid[ax][ay] = "A"
+        grid[gx][gy] = "G"
+
+        print("\nGridWorld:")
+        for row in grid:
+            print(" ".join(row))

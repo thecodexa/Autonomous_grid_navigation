@@ -5,11 +5,13 @@ env = GridWorld(grid_size=5)
 
 # reset environment
 obs = env.reset()
-print("Initial observation:", obs)
+# print("Initial observation:", obs)
+env.render()
 
 # take some actions
 actions = [3, 3, 1, 1]  # right, right, down, down
 
 for i, action in enumerate(actions):
     obs, reward, done = env.step(action)
-    print(f"Step {i+1}: obs={obs}, reward={reward}, done={done}")
+    env.render()
+    # print(f"Step {i+1}: obs={obs}, reward={reward}, done={done}")
