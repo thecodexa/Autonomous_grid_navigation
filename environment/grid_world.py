@@ -14,7 +14,30 @@ class GridWorld:
         return self.get_observation()
     
     def get_observation(self):
-        return np.concatenate([self.agent_pos, self.goal_pos])
+        view_size=5
+        radius=view_size//2
+
+        local_view=[]
+
+        ax, ay=self.agent_pos
+        gx, gy=self.goal_pos
+
+        for dx in range(-radius, radius+1):
+            for dy in range(-radius, radius+1):
+                x=ax+dx
+                y=ay+dy
+
+                if x<0 or x>=self.grid_size or y<0 or y>=self.grid_size:
+                    local_view.append(-1)
+                elif x==gx and y==gy:
+                    local_view.append(1)
+                else:
+                    local_view.append(0)
+
+        goal_dx=gx-ax
+        goal_dy=gy-ay
+
+        return np.array(local_view + [goal_dx, goal_dy],dtype=np.float32)
     
     def step(self, action):
         if action==0:
