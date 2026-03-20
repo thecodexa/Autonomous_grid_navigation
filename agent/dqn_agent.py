@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import random
+import numpy as np
 from collections import deque
 
 
@@ -33,7 +34,7 @@ class ReplayBuffer:
         states, actions, rewards, next_states, dones = zip(*batch)
 
         return (
-            torch.FloatTensor(states),
+            torch.FloatTensor(np.array(states)),
             torch.LongTensor(actions),
             torch.FloatTensor(rewards),
             torch.FloatTensor(next_states),
@@ -42,3 +43,34 @@ class ReplayBuffer:
 
     def __len__(self):
         return len(self.buffer)
+    
+
+class DQNAgent:
+    def __init__(self):
+        self.policy_network=QNetwork()
+        self.target_network=QNetwork()
+        self.buffer=ReplayBuffer()
+        self.epsilon=1.0
+        self.epsilon_decay=0.995
+        self.epsilon_min=0.05
+        self.gamma=0.99
+        self.batch_size=64
+
+    def select_action(self, state):
+        if random.random() < self.epsilon:
+            return random.randint(0,3)
+        else:
+            with torch.no_grad():
+                output=self.policy_network(torch.FloatTensor(state).unsqueeze(0))
+                return output.argmax(dim=1).item()
+                
+    def decay_epsilon(self):
+        self.epsilon=max(self.epsilon*self.epsilon_decay,self.epsilon_min)
+
+    def learn(self):
+        if len(self.buffer) < self.batch_size:
+            print(f"Not enough data in buffer: {len(self.buffer)}/{self.batch_size}")
+            return 
+        
+        states,actions,rewards,next_states,dones=self.buffer.sample(self.batch_size)
+
