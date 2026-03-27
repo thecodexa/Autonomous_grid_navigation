@@ -37,13 +37,13 @@ class ReplayBuffer:
             torch.FloatTensor(np.array(states)),
             torch.LongTensor(actions),
             torch.FloatTensor(rewards),
-            torch.FloatTensor(next_states),
+            torch.FloatTensor(np.array(next_states)),
             torch.FloatTensor(dones)
         )
 
     def __len__(self):
         return len(self.buffer)
-    
+
 
 class DQNAgent:
     def __init__(self):
@@ -55,6 +55,15 @@ class DQNAgent:
         self.epsilon_min=0.05
         self.gamma=0.99
         self.batch_size=64
+        self.criterion = nn.MSELoss()
+        self.optimizer = torch.optim.Adam(self.policy_network.parameters(), lr=0.001)
+        self.target_network.load_state_dict(self.policy_network.state_dict()) #target network should have the same weights as policy network at the beginning.
+        
+        self.target_update_freq = 100  # copy every 100 steps
+        self.learn_step = 0            # counter to track steps
+
+    def update_target_network(self):
+        self.target_network.load_state_dict(self.policy_network.state_dict())
 
     def select_action(self, state):
         if random.random() < self.epsilon:
@@ -73,4 +82,26 @@ class DQNAgent:
             return 
         
         states,actions,rewards,next_states,dones=self.buffer.sample(self.batch_size)
+
+        q_values = self.policy_network(states)
+        current_q = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)  #.gather() - Pick one value per row based on the action index.
+
+
+        #applying the Bellman equation
+        with torch.no_grad():    #We don't want to compute gradients for the target values.target network should not learn.
+            next_q_values = self.target_network(next_states)
+            max_next_q = next_q_values.max(dim=1)[0]   #we only need values as max returns both values and indices.
+            target_q = rewards + self.gamma * max_next_q * (1 - dones)  #(1 - dones) :- If done is 1 means the episode has ended, we don't add future rewards.
+
+
+        loss = self.criterion(current_q, target_q)
+        self.optimizer.zero_grad() #clear previous gradients
+        loss.backward()  #compute gradients
+        self.optimizer.step()  #update weights
+
+        self.learn_step += 1
+        if self.learn_step % self.target_update_freq == 0:
+            self.update_target_network()
+
+
 

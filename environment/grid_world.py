@@ -7,7 +7,7 @@ class GridWorld:
         self.max_steps = max_steps
         self.reset()
 
-    def reset(self):
+    def reset(self):                #static
         self.agent_pos=np.array([0,0])
         self.goal_pos=np.array([self.grid_size-1,self.grid_size-1])
         self.steps=0
