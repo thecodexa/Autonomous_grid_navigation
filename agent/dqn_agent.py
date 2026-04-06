@@ -56,7 +56,7 @@ class DQNAgent:
         self.gamma=0.99
         self.batch_size=64
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.policy_network.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.policy_network.parameters(), lr=0.00001)
         self.target_network.load_state_dict(self.policy_network.state_dict()) #target network should have the same weights as policy network at the beginning.
         
         self.target_update_freq = 100  # copy every 100 steps
@@ -103,5 +103,24 @@ class DQNAgent:
         if self.learn_step % self.target_update_freq == 0:
             self.update_target_network()
 
+
+    def save(self, path="model.pth"):
+        torch.save({
+            "policy_network": self.policy_network.state_dict(),
+            "target_network": self.target_network.state_dict(),
+            "optimizer":      self.optimizer.state_dict(),
+            "epsilon":        self.epsilon,
+            "learn_step":     self.learn_step,
+                }, path)
+        print(f"Model saved → {path}")
+
+    def load(self, path="model.pth"):
+        checkpoint = torch.load(path)
+        self.policy_network.load_state_dict(checkpoint["policy_network"])
+        self.target_network.load_state_dict(checkpoint["target_network"])
+        self.optimizer.load_state_dict(checkpoint["optimizer"])
+        self.epsilon    = checkpoint["epsilon"]
+        self.learn_step = checkpoint["learn_step"]
+        print(f"Model loaded ← {path}")
 
 

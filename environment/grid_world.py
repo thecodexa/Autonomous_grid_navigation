@@ -1,20 +1,98 @@
 import numpy as np
+from collections import deque
+import shelve
+import random
 
 class GridWorld:
 
-    def __init__(self,grid_size=10, max_steps=100):
+    def __init__(self,grid_size=10, max_steps=200):
         self.grid_size = grid_size
         self.max_steps = max_steps
         self.reset()
 
-    def reset(self):                #static
-        self.agent_pos=np.array([0,0])
-        self.goal_pos=np.array([self.grid_size-1,self.grid_size-1])
-        self.steps=0
+    def reset(self):
+        while True:
+            ax = random.randint(0, self.grid_size-1)
+            ay = random.randint(0, self.grid_size-1)              
+            self.agent_pos=np.array([ax,ay])
+            gx = random.randint(0, self.grid_size-1)
+            gy = random.randint(0, self.grid_size-1)
+            while gx==ax and gy == ay:
+                gx = random.randint(0, self.grid_size-1)
+                gy = random.randint(0, self.grid_size-1)
+            self.goal_pos=np.array([gx,gy])
+            self.steps=0
 
-        self.obstacles={(1,2),(2,2),(3,2)}
+            res_loc={(ax,ay),(gx,gy)}
+            self.obstacles=set()
+            for i in range(self.grid_size):
+                for j in range(self.grid_size):
+                    if (i, j) != (ax, ay) and (i, j) != (gx, gy):
+                        if(random.random()<0.15):
+                            self.obstacles.add((i,j))
 
-        return self.get_observation()
+
+            if(self.bfs_checker(self.agent_pos,self.goal_pos)):
+                return self.get_observation()
+            
+
+        
+            
+    
+    def bfs_checker(self, start, goal):
+        dq=deque()
+        dq.append(start)
+        visited = []
+        for i in range(self.grid_size):
+            row = []
+            for j in range(self.grid_size):
+                row.append(False)
+            visited.append(row)
+        visited[start[0]][start[1]]=True
+        for o in self.obstacles:
+            visited[o[0]][o[1]]=True
+
+        
+        adjacency=[]
+        for r in range(self.grid_size):
+            row=[]
+            for c in range(self.grid_size):
+                row.append([])
+            adjacency.append(row)
+
+        if str(self.grid_size) in shelve.open("Adjacency_matrix"):
+            adjacency=shelve.open("Adjacency_matrix")[str(self.grid_size)]
+        else:
+            for i in range(self.grid_size):
+                for j in range(self.grid_size):
+                        if( j != self.grid_size-1):
+                            adjacency[i][j+1].append((i,j))
+                            adjacency[i][j].append((i,j+1))
+                            
+                        if( i != self.grid_size-1):
+                            adjacency[i][j].append((i+1,j))
+                            adjacency[i+1][j].append((i,j))
+            shelve.open("Adjacency_matrix")[str(self.grid_size)] = adjacency
+        
+        
+      
+        while dq:                
+            for a in adjacency[dq[0][0]][dq[0][1]]:
+                
+                if(visited[a[0]][a[1]] == False):
+                    dq.append(a)
+                    visited[a[0]][a[1]] = True
+            dq.popleft()
+
+
+        if(visited[goal[0]][goal[1]]==False):
+            return False
+        
+        return True
+
+                    
+
+
     
     def get_observation(self):
         view_size=5
