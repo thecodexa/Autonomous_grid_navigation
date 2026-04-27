@@ -120,7 +120,7 @@ class DQNAgent:
         self.target_network.load_state_dict(checkpoint["target_network"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.epsilon    = checkpoint["epsilon"]
-        self.learn_step = checkpoint["learn_step"]
+        self.learn_step = checkpoint["learn_step"].k
         print(f"Model loaded ← {path}")
 
 
