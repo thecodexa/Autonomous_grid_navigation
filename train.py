@@ -37,6 +37,7 @@ def train():
         if episode % 100 == 0:
             success_rate = sum(recent_successes) / len(recent_successes) * 100
             print(f"Episode {episode} | Epsilon: {agent.epsilon:.3f} | Reward: {total_reward:.2f} | Success Rate: {success_rate:.1f}%")
+            agent.save("model.pth")
 
 if __name__ == "__main__":
     train()

@@ -51,15 +51,15 @@ class DQNAgent:
         self.target_network=QNetwork()
         self.buffer=ReplayBuffer()
         self.epsilon=1.0
-        self.epsilon_decay=0.995
+        self.epsilon_decay=0.9997
         self.epsilon_min=0.05
         self.gamma=0.99
         self.batch_size=64
-        self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.policy_network.parameters(), lr=0.00001)
+        self.criterion = nn.SmoothL1Loss()
+        self.optimizer = torch.optim.Adam(self.policy_network.parameters(), lr=0.0001)
         self.target_network.load_state_dict(self.policy_network.state_dict()) #target network should have the same weights as policy network at the beginning.
         
-        self.target_update_freq = 100  # copy every 100 steps
+        self.target_update_freq = 500  # copy every 500 steps
         self.learn_step = 0            # counter to track steps
 
     def update_target_network(self):
@@ -120,7 +120,7 @@ class DQNAgent:
         self.target_network.load_state_dict(checkpoint["target_network"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.epsilon    = checkpoint["epsilon"]
-        self.learn_step = checkpoint["learn_step"].k
+        self.learn_step = checkpoint["learn_step"]
         print(f"Model loaded ← {path}")
 
 

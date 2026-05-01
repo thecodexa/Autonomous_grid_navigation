@@ -30,6 +30,9 @@ class GridWorld:
                     if (i, j) != (ax, ay) and (i, j) != (gx, gy):
                         if(random.random()<0.15):
                             self.obstacles.add((i,j))
+            
+            self.visited = set()
+            self.visited.add(tuple(self.agent_pos))
 
 
             if(self.bfs_checker(self.agent_pos,self.goal_pos)):
@@ -59,20 +62,20 @@ class GridWorld:
             for c in range(self.grid_size):
                 row.append([])
             adjacency.append(row)
-
-        if str(self.grid_size) in shelve.open("Adjacency_matrix"):
-            adjacency=shelve.open("Adjacency_matrix")[str(self.grid_size)]
-        else:
-            for i in range(self.grid_size):
-                for j in range(self.grid_size):
-                        if( j != self.grid_size-1):
-                            adjacency[i][j+1].append((i,j))
-                            adjacency[i][j].append((i,j+1))
-                            
-                        if( i != self.grid_size-1):
-                            adjacency[i][j].append((i+1,j))
-                            adjacency[i+1][j].append((i,j))
-            shelve.open("Adjacency_matrix")[str(self.grid_size)] = adjacency
+        with shelve.open("Adjacency_matrix") as db:
+            if str(self.grid_size) in db:
+                adjacency=db[str(self.grid_size)]
+            else:
+                for i in range(self.grid_size):
+                    for j in range(self.grid_size):
+                            if( j != self.grid_size-1):
+                                adjacency[i][j+1].append((i,j))
+                                adjacency[i][j].append((i,j+1))
+                                
+                            if( i != self.grid_size-1):
+                                adjacency[i][j].append((i+1,j))
+                                adjacency[i+1][j].append((i,j))
+                db[str(self.grid_size)] = adjacency
         
         
       
@@ -152,15 +155,20 @@ class GridWorld:
             reward=-1.0
             done=True
         else:
-            reward=-0.1
+            reward=-0.15
             done=False
             if new_dist < prev_dist:
-                reward += 0.05
-            elif new_dist > prev_dist:
-                reward -= 0.05
+                reward += 0.02
+            # elif new_dist > prev_dist:
+            #     reward -= 0.01
 
             if hit_obstacle:
-                reward -= 0.2
+                reward -= 0.4
+            
+            if tuple(self.agent_pos) in self.visited:
+                reward -= 0.08
+            else:
+                self.visited.add(tuple(self.agent_pos))
         
         return self.get_observation(), reward, done
     
