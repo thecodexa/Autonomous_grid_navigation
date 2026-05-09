@@ -18,13 +18,8 @@ def visualize(episodes=1 ,delay=0.4):
         total_reward=0
 
         while not done:
-            # os.system("cls")
             env.render()
             action=agent.select_action(state)
-            # if action==0: print("↑")
-            # if action==1: print("↓")
-            # if action==2: print("←")
-            # if action==3: print("→")
             print(["↑","↓","←","→"][action])
             next_state,reward,done = env.step(action)
             print(reward)
@@ -32,7 +27,6 @@ def visualize(episodes=1 ,delay=0.4):
             total_reward+=reward
             time.sleep(delay)
         
-        # os.system("cls")
         env.render()
 
 
@@ -74,12 +68,12 @@ def get_custom_map():
 
     if env.bfs_checker(env.agent_pos, env.goal_pos):
         agent.load("model.pth")
-        state = env.get_observation()   # get state without resetting
+        state = env.get_observation()
         done = False
         total_reward = 0
+        agent.epsilon=0.0
 
         while not done:
-            os.system("cls")
             env.render()
             action = agent.select_action(state)
             print(["↑","↓","←","→"][action])
@@ -88,8 +82,6 @@ def get_custom_map():
             state = next_state
             total_reward += reward
             time.sleep(0.1)
-
-        os.system("cls")
         env.render()
         print(f"{'Goal Reached ✓' if np.array_equal(env.agent_pos, env.goal_pos) else 'Timed Out ✗'}")
         print(f"Total Reward: {total_reward:.2f}")
@@ -105,7 +97,7 @@ if __name__ == "__main__":
     choice = input("Choose (1 or 2): ")
     
     if choice == "1":
-        visualize(episodes=10, delay=0.2)
+        visualize(episodes=1, delay=0.2)
     elif choice == "2":
         get_custom_map()
     else:

@@ -7,7 +7,7 @@ from collections import deque
 
 
 class QNetwork(nn.Module):
-    def __init__(self, state_size=27, action_size=4):
+    def __init__(self, state_size=28, action_size=4):
         super(QNetwork, self).__init__()
 
         self.fc1 = nn.Linear(state_size, 128)
@@ -47,8 +47,11 @@ class ReplayBuffer:
 
 class DQNAgent:
     def __init__(self):
-        self.policy_network=QNetwork()
-        self.target_network=QNetwork()
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Using device: {self.device}")
+        self.policy_network=QNetwork().to(self.device)
+        self.target_network=QNetwork().to(self.device)
         self.buffer=ReplayBuffer()
         self.epsilon=1.0
         self.epsilon_decay=0.9997
@@ -57,7 +60,7 @@ class DQNAgent:
         self.batch_size=64
         self.criterion = nn.SmoothL1Loss()
         self.optimizer = torch.optim.Adam(self.policy_network.parameters(), lr=0.0001)
-        self.target_network.load_state_dict(self.policy_network.state_dict()) #target network should have the same weights as policy network at the beginning.
+        self.target_network.load_state_dict(self.policy_network.state_dict())
         
         self.target_update_freq = 500  # copy every 500 steps
         self.learn_step = 0            # counter to track steps
@@ -70,7 +73,7 @@ class DQNAgent:
             return random.randint(0,3)
         else:
             with torch.no_grad():
-                output=self.policy_network(torch.FloatTensor(state).unsqueeze(0))
+                output=self.policy_network(torch.FloatTensor(state).unsqueeze(0).to(self.device))
                 return output.argmax(dim=1).item()
                 
     def decay_epsilon(self):
@@ -83,21 +86,27 @@ class DQNAgent:
         
         states,actions,rewards,next_states,dones=self.buffer.sample(self.batch_size)
 
+        states      = states.to(self.device)
+        actions     = actions.to(self.device)
+        rewards     = rewards.to(self.device)
+        next_states = next_states.to(self.device)
+        dones       = dones.to(self.device)
+
         q_values = self.policy_network(states)
-        current_q = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)  #.gather() - Pick one value per row based on the action index.
+        current_q = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
 
 
         #applying the Bellman equation
-        with torch.no_grad():    #We don't want to compute gradients for the target values.target network should not learn.
+        with torch.no_grad():
             next_q_values = self.target_network(next_states)
-            max_next_q = next_q_values.max(dim=1)[0]   #we only need values as max returns both values and indices.
-            target_q = rewards + self.gamma * max_next_q * (1 - dones)  #(1 - dones) :- If done is 1 means the episode has ended, we don't add future rewards.
+            max_next_q = next_q_values.max(dim=1)[0]
+            target_q = rewards + self.gamma * max_next_q * (1 - dones)
 
 
         loss = self.criterion(current_q, target_q)
-        self.optimizer.zero_grad() #clear previous gradients
-        loss.backward()  #compute gradients
-        self.optimizer.step()  #update weights
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         self.learn_step += 1
         if self.learn_step % self.target_update_freq == 0:
@@ -115,7 +124,7 @@ class DQNAgent:
         print(f"Model saved → {path}")
 
     def load(self, path="model.pth"):
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path , map_location=self.device)
         self.policy_network.load_state_dict(checkpoint["policy_network"])
         self.target_network.load_state_dict(checkpoint["target_network"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])

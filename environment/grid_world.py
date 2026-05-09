@@ -28,12 +28,14 @@ class GridWorld:
             for i in range(self.grid_size):
                 for j in range(self.grid_size):
                     if (i, j) != (ax, ay) and (i, j) != (gx, gy):
-                        if(random.random()<0.15):
+                        if(random.random()<0.2):
                             self.obstacles.add((i,j))
             
             self.visited = set()
             self.visited.add(tuple(self.agent_pos))
 
+
+            self.last_action = -1
 
             if(self.bfs_checker(self.agent_pos,self.goal_pos)):
                 return self.get_observation()
@@ -123,7 +125,12 @@ class GridWorld:
         goal_dx=gx-ax
         goal_dy=gy-ay
 
-        return np.array(local_view + [goal_dx, goal_dy],dtype=np.float32)
+        if self.last_action == -1:
+            last_action_norm = -1.0
+        else:
+            last_action_norm = self.last_action / 3.0
+
+        return np.array(local_view + [goal_dx, goal_dy,last_action_norm],dtype=np.float32)
     
     def step(self, action):
 
@@ -149,7 +156,7 @@ class GridWorld:
         new_dist = abs(self.agent_pos[0] - self.goal_pos[0]) + abs(self.agent_pos[1] - self.goal_pos[1])   
 
         if np.array_equal(self.agent_pos, self.goal_pos):       
-            reward=10.0
+            reward=15.0
             done=True
         elif self.steps>=self.max_steps:
             reward=-1.0
@@ -158,17 +165,22 @@ class GridWorld:
             reward=-0.15
             done=False
             if new_dist < prev_dist:
-                reward += 0.02
-            # elif new_dist > prev_dist:
-            #     reward -= 0.01
+                reward += 0.08
+            elif new_dist > prev_dist:
+                reward -= 0.01
 
             if hit_obstacle:
-                reward -= 0.4
+                reward -= 5
+
+            if np.array_equal(self.agent_pos, old_pos):
+                reward -= 1
             
             if tuple(self.agent_pos) in self.visited:
-                reward -= 0.08
+                reward -= 0.05
             else:
                 self.visited.add(tuple(self.agent_pos))
+
+        self.last_action = action
         
         return self.get_observation(), reward, done
     
