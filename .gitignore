@@ -211,3 +211,12 @@ __marimo__/
 /t.py
 /test_env.py
 /model.pth
+test_model.py
+
+# RL project generated files
+*.dat
+*.dir
+*.bak
+
+# VS Code
+.vscode/

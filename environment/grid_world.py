@@ -2,7 +2,9 @@ import numpy as np
 from collections import deque
 import shelve
 import random
+import os
 
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Adjacency_matrix")
 class GridWorld:
 
     def __init__(self,grid_size=10, max_steps=200):
@@ -64,7 +66,7 @@ class GridWorld:
             for c in range(self.grid_size):
                 row.append([])
             adjacency.append(row)
-        with shelve.open("Adjacency_matrix") as db:
+        with shelve.open(DB_PATH) as db:
             if str(self.grid_size) in db:
                 adjacency=db[str(self.grid_size)]
             else:
