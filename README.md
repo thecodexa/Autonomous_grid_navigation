@@ -174,6 +174,7 @@ The environment is partially observable. Since the DQN uses a feedforward neural
 ## Author
 
 Vivek Bhushan
+
 Tanmay Hajela
 
 Minor Project 2
